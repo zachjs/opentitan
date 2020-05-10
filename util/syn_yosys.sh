@@ -18,51 +18,56 @@
 # use fusesoc to generate files and file list
 #-------------------------------------------------------------------------
 \rm -Rf build
-fusesoc --cores-root .. run --target=sim --setup --build formal > /dev/null 2>&1
+fusesoc --cores-root . run --target=sim --setup lowrisc:systems:top_earlgrey_verilator
 
 # copy all files into directory "syn_out"
 \rm -Rf syn_out
 mkdir syn_out
-cp build/formal_0/src/*/*/*.sv build/formal_0/src/*/*/*/*.sv syn_out
+cp \
+  build/lowrisc_systems_top_earlgrey_verilator_0.1/src/*/*.sv \
+  build/lowrisc_systems_top_earlgrey_verilator_0.1/src/*/*/*.sv \
+  build/lowrisc_systems_top_earlgrey_verilator_0.1/src/*/*/*/*.sv \
+  syn_out
+
+# remove some unneeded modules
+\rm syn_out/top_earlgrey_verilator.sv
+\rm syn_out/ibex_tracer.sv
+\rm syn_out/dmidpi.sv
+\rm syn_out/gpiodpi.sv
+\rm syn_out/jtagdpi.sv
+\rm syn_out/spidpi.sv
+\rm syn_out/uartdpi.sv
+\rm syn_out/usbdpi.sv
+\rm syn_out/pins_if.sv
+
 
 #-------------------------------------------------------------------------
 # convert all RTL files to Verilog
 #-------------------------------------------------------------------------
 cd syn_out
+sv2v -DSYNTHESIS -DSV2V *.sv > opentitan.v
 
-for file in *.sv; do
-  module=`basename -s .sv $file`
-  echo $file
-  sv2v --define=VERILATOR --define=SYNTHESIS *_pkg.sv prim_assert.sv $file > ${module}.v
+# modules=`cat $ve | grep "^module" | grep -v "^module top" | sed -e "s/module \([a-zA-Z0-0_]\{1,\}\).*/\1/"`
 
-  # TODO: eventually remove below hack. It removes "unsigned" from params
-  # because Yosys doesn't support unsigned parameters
-  sed -i 's/parameter unsigned/parameter/g' ${module}.v
-  sed -i 's/localparam unsigned/localparam/g' ${module}.v
-done
-
-# remove *pkg.v files (they are empty files and not needed)
-\rm -Rf *_pkg.v
-
-#-------------------------------------------------------------------------
-# run LEC (generarted Verilog vs. original SystemVerilog)
-#-------------------------------------------------------------------------
-printf "\n\nLEC RESULTS:\n"
-cd ../../hw/formal
-for file in ../../util/syn_out/*.v; do
-  module=`basename -s .v $file`
-  lec_sv2v ../../util/syn_out $module > /dev/null 2>&1
-
-  # summarize results
-  result=`grep "Compare Results" lec_${module}.log`
-  if [ $? -ne 0 ]; then
-    result="CRASH"
-  else
-    result=`echo $result | awk '{ print $4 }'`
-  fi
-  printf "%-25s %s\n" $module $result
-done
-cd -
+#####-------------------------------------------------------------------------
+##### run LEC (generarted Verilog vs. original SystemVerilog)
+#####-------------------------------------------------------------------------
+####printf "\n\nLEC RESULTS:\n"
+####cd ../../hw/formal
+####for file in ../../util/syn_out/*.v; do
+####  module=`basename -s .v $file`
+####  lec_sv2v ../../util/syn_out $module > /dev/null 2>&1
+####
+####  # summarize results
+####  result=`grep "Compare Results" lec_${module}.log`
+####  if [ $? -ne 0 ]; then
+####    result="CRASH"
+####  else
+####    result=`echo $result | awk '{ print $4 }'`
+####  fi
+####  printf "%-25s %s\n" $module $result
+####done
+####cd -
 
 #-------------------------------------------------------------------------
 # run yosys
@@ -72,7 +77,12 @@ printf "\n\nYosys:\n"
 # for now, read in each Verilog file into Yosys and only output errors
 # and warnings
 for file in *.v; do
-  yosys -QTqp "read_verilog ${file}"
+  yosys -QTqp "
+read_verilog syn_out/*.v \
+hierarchy -check -top top_earlgrey \
+synth_ice40 \
+write_blif out.blif \
+"
 done
 
 # TODOs:

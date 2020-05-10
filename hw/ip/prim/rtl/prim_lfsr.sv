@@ -299,7 +299,7 @@ module prim_lfsr #(
   ////////////////
   // Galois XOR //
   ////////////////
-  if (64'(LfsrType) == 64'("GAL_XOR")) begin : gen_gal_xor
+  if (LfsrType == "GAL_XOR") begin : gen_gal_xor
 
     // if custom polynomial is provided
     if (CustomCoeffs > 0) begin : gen_custom
@@ -324,7 +324,7 @@ module prim_lfsr #(
   ////////////////////
   // Fibonacci XNOR //
   ////////////////////
-  end else if (64'(LfsrType) == "FIB_XNOR") begin : gen_fib_xnor
+  end else if (LfsrType == "FIB_XNOR") begin : gen_fib_xnor
 
     // if custom polynomial is provided
     if (CustomCoeffs > 0) begin : gen_custom
@@ -389,7 +389,7 @@ module prim_lfsr #(
     logic state0;
 
     // Galois XOR
-    if (64'(LfsrType) == 64'("GAL_XOR")) begin
+    if (LfsrType == "GAL_XOR") begin
       if (state == 0) begin
         state = DefaultSeed;
       end else begin
@@ -399,7 +399,7 @@ module prim_lfsr #(
         state ^= LfsrDw'(entropy);
       end
     // Fibonacci XNOR
-    end else if (64'(LfsrType) == "FIB_XNOR") begin
+    end else if (LfsrType == "FIB_XNOR") begin
       if (&state) begin
         state = DefaultSeed;
       end else begin
