@@ -44,10 +44,13 @@ cp \
 #-------------------------------------------------------------------------
 # convert all RTL files to Verilog
 #-------------------------------------------------------------------------
-cd syn_out
-sv2v -DSYNTHESIS -DSV2V *.sv > opentitan.v
-
-# modules=`cat $ve | grep "^module" | grep -v "^module top" | sed -e "s/module \([a-zA-Z0-0_]\{1,\}\).*/\1/"`
+printf "\n\nsv2v:\n"
+sv2v -DSYNTHESIS -DSV2V syn_out/*.sv > syn_out/opentitan.v
+modules=`cat syn_out/opentitan.v | grep "^module" | sed -e "s/^module //" | sed -e "s/ (//"`
+for module in $modules; do
+  cat syn_out/opentitan.v | sed -n "/^module $module /,/^endmodule/p" > syn_out/$module.v
+done
+rm syn_out/opentitan.v
 
 #####-------------------------------------------------------------------------
 ##### run LEC (generarted Verilog vs. original SystemVerilog)
@@ -67,7 +70,6 @@ sv2v -DSYNTHESIS -DSV2V *.sv > opentitan.v
 ####  fi
 ####  printf "%-25s %s\n" $module $result
 ####done
-####cd -
 
 #-------------------------------------------------------------------------
 # run yosys
@@ -76,14 +78,12 @@ printf "\n\nYosys:\n"
 
 # for now, read in each Verilog file into Yosys and only output errors
 # and warnings
-for file in *.v; do
-  yosys -QTqp "
-read_verilog syn_out/*.v \
-hierarchy -check -top top_earlgrey \
-synth_ice40 \
-write_blif out.blif \
+yosys -QTqp "
+read_verilog syn_out/*.v;
+hierarchy -check -top top_earlgrey;
+synth_ice40;
+write_blif out.blif;
 "
-done
 
 # TODOs:
 #  - add full yosys synthesis for all modules
