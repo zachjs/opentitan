@@ -44,38 +44,48 @@ cp \
 \rm syn_out/prim_pad_wrapper.sv
 \rm syn_out/prim_generic_pad_wrapper.sv
 
+# troublesome and not used?
+\rm syn_out/tlul_assert.sv
+\rm syn_out/tlul_assert_multiple.sv
+
 # match filename to module name
 mv syn_out/ibex_register_file_ff.sv syn_out/ibex_register_file.sv
+
+# only meant to be included within a module
+mv syn_out/prim_util_memload.sv syn_out/prim_util_memload.svh
+sed -i.bak -e "s/prim_util_memload\.sv/prim_util_memload.svh/" syn_out/*.sv
+rm syn_out/*.bak
 
 #-------------------------------------------------------------------------
 # convert all RTL files to Verilog
 #-------------------------------------------------------------------------
 printf "\n\nsv2v:\n"
-sv2v -DSYNTHESIS -DSV2V syn_out/*.sv > syn_out/opentitan.v
+sv2v -DSYNTHESIS syn_out/*.sv > syn_out/opentitan.v
 modules=`cat syn_out/opentitan.v | grep "^module" | sed -e "s/^module //" | sed -e "s/ (//"`
 for module in $modules; do
   cat syn_out/opentitan.v | sed -n "/^module $module /,/^endmodule/p" > syn_out/$module.v
 done
 rm syn_out/opentitan.v
 
-#####-------------------------------------------------------------------------
-##### run LEC (generarted Verilog vs. original SystemVerilog)
-#####-------------------------------------------------------------------------
-####printf "\n\nLEC RESULTS:\n"
-####cd ../../hw/formal
-####for file in ../../util/syn_out/*.v; do
-####  module=`basename -s .v $file`
-####  lec_sv2v ../../util/syn_out $module > /dev/null 2>&1
-####
-####  # summarize results
-####  result=`grep "Compare Results" lec_${module}.log`
-####  if [ $? -ne 0 ]; then
-####    result="CRASH"
-####  else
-####    result=`echo $result | awk '{ print $4 }'`
-####  fi
-####  printf "%-25s %s\n" $module $result
-####done
+#-------------------------------------------------------------------------
+# run LEC (generarted Verilog vs. original SystemVerilog)
+#-------------------------------------------------------------------------
+printf "\n\nLEC RESULTS:\n"
+cd ./hw/formal
+for file in `ls ../../syn_out/*.v`; do
+  module=`basename -s .v $file`
+  ./lec_sv2v ../../syn_out $module > /dev/null 2>&1
+
+  # summarize results
+  result=`grep "Compare Results" lec_${module}.log`
+  if [ $? -ne 0 ]; then
+    result="CRASH"
+  else
+    result=`echo $result | awk '{ print $4 }'`
+  fi
+  printf "%-25s %s\n" $module $result
+done
+cd ../..
 
 #-------------------------------------------------------------------------
 # run yosys
