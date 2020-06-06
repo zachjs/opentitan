@@ -40,6 +40,12 @@ cp \
 \rm syn_out/usbdpi.sv
 \rm syn_out/pins_if.sv
 
+# not synthesizable
+\rm syn_out/prim_pad_wrapper.sv
+\rm syn_out/prim_generic_pad_wrapper.sv
+
+# match filename to module name
+mv syn_out/ibex_register_file_ff.sv syn_out/ibex_register_file.sv
 
 #-------------------------------------------------------------------------
 # convert all RTL files to Verilog
