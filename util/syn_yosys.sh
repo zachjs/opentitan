@@ -18,26 +18,18 @@
 # use fusesoc to generate files and file list
 #-------------------------------------------------------------------------
 \rm -Rf build
-fusesoc --cores-root . run --target=sim --setup lowrisc:systems:top_earlgrey_verilator
+fusesoc --cores-root . run --target=syn --setup lowrisc:systems:top_earlgrey
 
 # copy all files into directory "syn_out"
 \rm -Rf syn_out
 mkdir syn_out
 cp \
-  build/lowrisc_systems_top_earlgrey_verilator_0.1/src/*/*.sv \
-  build/lowrisc_systems_top_earlgrey_verilator_0.1/src/*/*/*.sv \
-  build/lowrisc_systems_top_earlgrey_verilator_0.1/src/*/*/*/*.sv \
+  build/lowrisc_systems_top_earlgrey_0.1/src/*/*.sv \
+  build/lowrisc_systems_top_earlgrey_0.1/src/*/*/*.sv \
+  build/lowrisc_systems_top_earlgrey_0.1/src/*/*/*/*.sv \
   syn_out
 
 # remove some unneeded modules
-\rm syn_out/top_earlgrey_verilator.sv
-\rm syn_out/ibex_tracer.sv
-\rm syn_out/dmidpi.sv
-\rm syn_out/gpiodpi.sv
-\rm syn_out/jtagdpi.sv
-\rm syn_out/spidpi.sv
-\rm syn_out/uartdpi.sv
-\rm syn_out/usbdpi.sv
 \rm syn_out/pins_if.sv
 
 # not synthesizable
@@ -49,12 +41,12 @@ cp \
 \rm syn_out/tlul_assert_multiple.sv
 
 # match filename to module name
-mv syn_out/ibex_register_file_ff.sv syn_out/ibex_register_file.sv
+mv syn_out/ibex_register_file{_ff,}.sv
 
 # only meant to be included within a module
-mv syn_out/prim_util_memload.sv syn_out/prim_util_memload.svh
+mv syn_out/prim_util_memload.sv{,h}
 sed -i.bak -e "s/prim_util_memload\.sv/prim_util_memload.svh/" syn_out/*.sv
-rm syn_out/*.bak
+rm syn_out/*.bak  # some sed implementations require backup extensions
 
 #-------------------------------------------------------------------------
 # convert all RTL files to Verilog

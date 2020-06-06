@@ -35,8 +35,6 @@ module prim_generic_pad_wrapper #(
 // driving strength attributes are not supported by verilator or sv2v/yosys
 `ifdef VERILATOR
   assign inout_io = (oe) ? out : 1'bz;
-`elsif SV2V
-  assign inout_io = (oe) ? out : 1'bz;
 `else
   // different driver types
   assign (strong0, strong1) inout_io = (oe && drv == STRONG_DRIVE) ? out : 1'bz;
