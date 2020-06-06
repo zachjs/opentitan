@@ -75,7 +75,7 @@ for file in `ls ../../syn_out/*.v`; do
   else
     result=`echo $result | awk '{ print $4 }'`
   fi
-  printf "%-25s %s\n" $module $result
+  printf "%-35s %s\n" $module $result
 done
 cd ../..
 
