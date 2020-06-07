@@ -20,13 +20,20 @@ set naming rule -parameter ""
 set naming rule -instance_array "%s_%d"
 set naming rule -enable_unnamed_blk_naming
 
+// Some of the prim_generic_ modules are instantiated using SystemVerilog
+// wildcard port bindings. These wildcard bindings are elaborated during
+// conversion. For the comparison to work, we need to read the signature of
+// these modules, but we still want to treat them as black boxes.
+add notranslate filepathnames $LEC_DIR/prim_generic_*.*
+add notranslate filepathnames $LEC_DIR/$LEC_TOP.* // placate below del
+del notranslate filepathnames $LEC_DIR/$LEC_TOP.* // don't blackbox current module
+
 // read golden design
 read design -golden -sv12 \
-  $LEC_DIR/prim_assert.sv \
   $LEC_DIR/top_pkg.sv \
   $LEC_DIR/tlul_pkg.sv \
-  $LEC_DIR/prim_generic_*.sv \
   $LEC_DIR/*_pkg.sv \
+  $LEC_DIR/prim_generic_*.sv \
   $LEC_DIR/$LEC_TOP.sv
 
 // read revised design
